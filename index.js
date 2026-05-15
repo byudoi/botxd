@@ -80,7 +80,7 @@ client.on('messageCreate', async (msg) => {
     fs.writeFileSync(inputPath, response.data);
 
     const commandLine =
-      `lua Prometheus/cli.lua "${inputPath}" -o "${outputPath}"`;
+      lua5.4 Prometheus/cli.lua "${inputPath}" -o "${outputPath}"`;
 
     exec(commandLine, async (error, stdout, stderr) => {
 
