@@ -59,19 +59,11 @@ client.on('messageCreate', async (msg) => {
 
   const uniqueId = Date.now();
 
-  const inputPath = path.join(
-    TEMP_DIR,
-    `input_${uniqueId}.lua`
-  );
-
-  const outputPath = path.join(
-    OUTPUT_DIR,
-    `obfuscated_${uniqueId}.lua`
-  );
+  const inputPath = path.join(TEMP_DIR, `input_${uniqueId}.lua`);
+  const outputPath = path.join(OUTPUT_DIR, `obfuscated_${uniqueId}.lua`);
 
   try {
-
-    await msg.reply('Obfuscando archivo...');
+    await msg.reply('🔒 Obfuscando archivo...');
 
     const response = await axios.get(attachment.url, {
       responseType: 'arraybuffer'
@@ -79,63 +71,53 @@ client.on('messageCreate', async (msg) => {
 
     fs.writeFileSync(inputPath, response.data);
 
-    const commandLine =
-      lua5.4 Prometheus/cli.lua "${inputPath}" -o "${outputPath}"`;
+    // CORREGIDO: Usar rutas absolutas y mejor manejo
+    const luaPath = '/usr/bin/lua5.4';
+    const cliPath = '/app/Prometheus/cli.lua';
+    
+    const commandLine = `${luaPath} "${cliPath}" "${inputPath}" -o "${outputPath}"`;
 
-    exec(commandLine, async (error, stdout, stderr) => {
+    console.log('Ejecutando:', commandLine);
+
+    exec(commandLine, { shell: '/bin/bash', maxBuffer: 1024 * 1024 * 10 }, async (error, stdout, stderr) => {
+      
+      console.log('STDOUT:', stdout);
+      console.log('STDERR:', stderr);
 
       if (error) {
-        console.log(stderr);
-
-        if (fs.existsSync(inputPath)) {
-          fs.unlinkSync(inputPath);
-        }
-
-        return msg.reply('Error al obfuscar el archivo.');
+        console.error('Error code:', error.code);
+        console.error('Error message:', error.message);
+        
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+        
+        return msg.reply('❌ Error al obfuscar el archivo. Asegúrate que el archivo Lua sea válido.');
       }
 
       if (!fs.existsSync(outputPath)) {
-
-        if (fs.existsSync(inputPath)) {
-          fs.unlinkSync(inputPath);
-        }
-
-        return msg.reply('Prometheus no generó salida.');
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+        return msg.reply('❌ Prometheus no generó el archivo de salida.');
       }
 
-      const obfuscatedFile =
-        new AttachmentBuilder(outputPath);
+      const obfuscatedFile = new AttachmentBuilder(outputPath);
 
       await msg.reply({
-        content: 'Archivo obfuscado:',
+        content: '✅ Archivo obfuscado correctamente:',
         files: [obfuscatedFile]
       });
 
-      if (fs.existsSync(inputPath)) {
-        fs.unlinkSync(inputPath);
-      }
-
-      if (fs.existsSync(outputPath)) {
-        fs.unlinkSync(outputPath);
-      }
-
+      // Limpiar archivos temporales
+      if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+      if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
     });
 
   } catch (err) {
-
-    console.log(err);
-
-    if (fs.existsSync(inputPath)) {
-      fs.unlinkSync(inputPath);
-    }
-
-    if (fs.existsSync(outputPath)) {
-      fs.unlinkSync(outputPath);
-    }
-
-    msg.reply('Ocurrió un error.');
+    console.error('Error:', err);
+    
+    if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+    if (fs.existsSync(outputPath)) fs.unlinkSync(outputPath);
+    
+    msg.reply('❌ Ocurrió un error al procesar el archivo.');
   }
-
 });
 
 client.login(process.env.TOKEN);
