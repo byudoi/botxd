@@ -1,6 +1,7 @@
 FROM node:20
 
 # Instalar Lua y herramientas necesarias
+# CORREGIDO: lua5.4-dev -> liblua5.4-dev
 RUN apt update && apt install -y \
     lua5.4 \
     liblua5.4-dev \
