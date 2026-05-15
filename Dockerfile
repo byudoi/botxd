@@ -3,7 +3,7 @@ FROM node:20
 # Instalar Lua y herramientas necesarias
 RUN apt update && apt install -y \
     lua5.4 \
-    lua5.4-dev \
+    liblua5.4-dev \
     git \
     && rm -rf /var/lib/apt/lists/*
 
